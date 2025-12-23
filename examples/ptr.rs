@@ -1,3 +1,7 @@
+use std::str::FromStr;
+
 fn main() {
-    println!("{:x}",0xfffff80671c58000u64+0x5f57b4)
+    let vec = &[1];
+    &vec;
+    &vec;
 }

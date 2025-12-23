@@ -1,7 +1,7 @@
 use std::ffi::CStr;
 use std::str::FromStr;
 use std::time::Duration;
-
+use pdb::{ModuleInfo, ProcedureSymbol};
 use windows_sys::Win32::System::Diagnostics::Debug::{
     IMAGE_DEBUG_DIRECTORY, IMAGE_DEBUG_TYPE_CODEVIEW, IMAGE_SECTION_HEADER,
 };
@@ -270,27 +270,23 @@ pub fn find_func_with_pdb(func_name: &str, pdb_path: &str) -> Option<u32> {
     if let Ok(file) = std::fs::File::open(pdb_path) {
         let mut pdb = pdb::PDB::open(file).unwrap();
         let address_map = pdb.address_map().unwrap();
-        // 获取符号表
+        // 获取全局符号表
         let symbol_table = pdb.global_symbols().unwrap();
         // 获取类型信息（用于解析函数参数等）
         let mut symbols = symbol_table.iter();
         while let Some(symbol) = symbols.next().unwrap() {
             match symbol.parse() {
-                Ok(pdb::SymbolData::Public(data)) if data.function => {
-                    // we found the location of a function!
-                    // println!("{:?}", data);
+                Ok(pdb::SymbolData::Public(ref data)) => {
                     let rva = data.offset.to_rva(&address_map).unwrap_or_default();
                     let func = data.name.to_string();
-                    if func.starts_with("Zw") {
-                        println!("{}->{}", func, rva);
-                    }
-
                     if func_name.eq(func.trim()) {
                         println!("{}:{}", func_name, rva);
                         return Some(rva.0);
                     }
                 }
-                _ => {}
+                _ => {
+
+                }
             }
         }
     }
